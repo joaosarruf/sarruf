@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfólio Criativo Interativo - Cards Animados</title>
+  <!-- Google Fonts (Poppins) -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- React and ReactDOM -->
+  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone@7.22.5/Babel.min.js"></script>
+  <!-- Tailwind CSS (CDN for testing) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- GSAP, ScrollTrigger, and MotionPath -->
+  <script src="https://unpkg.com/gsap@3.12.2/dist/gsap.min.js"></script>
+  <script src="https://unpkg.com/gsap@3.12.2/dist/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/gsap@3.12.2/dist/MotionPathPlugin.min.js"></script>
+  <!-- particles.js (for canvas effect) -->
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <!-- Vanilla Tilt JS (for project card hover effect) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.2/vanilla-tilt.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background-color: #0a0a0a;
+      color: #e0e0e0;
+      overflow-x: hidden;
+      transition: background-color 0.8s ease-in-out;
+    }
+    #particles-js { position: fixed; width: 100%; height: 100%; top: 0; left: 0; z-index: -1; }
+    #cursor { position: fixed; width: 15px; height: 15px; border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: width 0.3s ease, height 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease; mix-blend-mode: difference; }
+    #cursor.hovered { width: 30px; height: 30px; background-color: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(2px); }
+    #cursor.text-hover { width: 5px; height: 25px; border-radius: 5px; background-color: rgba(255, 255, 255, 0.8); }
+    .section { min-height: 100vh; display: flex; justify-content: center; align-items: center; flex-direction: column; padding: 5rem 2rem; width: 100%; position: relative; overflow: hidden; }
+    .letter { display: inline-block; will-change: transform, opacity; }
+    
+    /* Base Card Style (Used by Projects, Certs, Recognitions) */
+    .card {
+      margin: 1rem; /* Adjusted margin for grid layouts */
+      padding: 2rem;
+      background: rgba(20, 20, 20, 0.6);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      width: 100%;
+      text-align: center;
+      transition: background 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease;
+      opacity: 100; /* Start hidden for GSAP */
+      transform: translateY(50px); /* Start slightly lower for GSAP */
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      will-change: transform; /* Optimize for transforms */
+    }
+    .card:hover {
+      background: rgba(30, 30, 30, 0.7);
+      transform: translateY(40px) scale(1.02); /* Base hover effect */
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Project Card Specifics (for Tilt) */
+    .project-card {
+        /* Inherits .card styles */
+        /* Add perspective for 3D effect if using CSS tilt */
+        /* perspective: 1000px; */ 
+    }
+    .project-card:hover {
+        /* Override base hover transform if using JS tilt */
+        /* transform: translateY(40px); */ 
+        /* Keep scale or adjust as needed */
+        transform: translateY(40px) scale(1.02);
+    }
+
+    /* Skill Section Styles */
+    .skill-category { width: 100%; margin-bottom: 3rem; }
+    .skill-category-title { font-size: 1.5rem; font-weight: 600; color: #a0a0a0; margin-bottom: 1.5rem; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 0.5rem; }
+    .skills-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; }
+    
+    /* Skill Card */
+    .skill-card {
+        background: rgba(25, 25, 25, 0.5);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        opacity: 100; /* Start hidden for GSAP */
+        transform: scale(0.8) translateY(30px); /* Start smaller/lower for GSAP */
+        transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center; /* Center content vertically */
+        min-height: 180px; /* Ensure consistent height */
+    }
+    .skill-card:hover {
+        background: rgba(40, 40, 40, 0.7);
+        transform: scale(1.05); /* Scale up on hover */
+        box-shadow: 0 8px 24px rgba(78, 205, 196, 0.3); /* Add glow */
+    }
+    .skill-card-icon {
+        font-size: 2.5rem; /* Placeholder for icon */
+        margin-bottom: 1rem;
+        color: #4ecdc4; /* Teal color for icon */
+    }
+    .skill-card-name { font-weight: 600; margin-bottom: 0.5rem; color: #e0e0e0; }
+    .skill-card-description { font-size: 0.8rem; color: #b0b0b0; }
+
+    /* Contact Section Styles */
+    .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        max-width: 800px; /* Limit width */
+        width: 100%;
+        margin-top: 2rem;
+    }
+    .contact-card {
+        display: flex; /* Use flex for icon + text */
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: rgba(25, 25, 25, 0.5);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        text-decoration: none; /* Remove underline from link */
+        color: #e0e0e0;
+        opacity: 100; /* Start hidden for GSAP */
+        transform: translateY(30px); /* Start lower for GSAP */
+        transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+    .contact-card:hover {
+        background: rgba(40, 40, 40, 0.7);
+        transform: translateY(-5px) scale(1.03); /* Lift and scale slightly */
+        box-shadow: 0 8px 24px rgba(255, 100, 180, 0.3); /* Pink glow */
+        color: #f0f0f0;
+    }
+    .contact-card-icon {
+        font-size: 1.5rem; /* Placeholder */
+        margin-right: 0.8rem;
+        color: #ff6b81; /* Pink color for icon */
+    }
+    .contact-card-text { font-weight: 500; }
+
+    /* Other Styles (Timeline, Certs, Recognitions, etc. - Keep as before) */
+    .holo-effect { position: relative; overflow: hidden; }
+    .holo-effect::before { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(100, 200, 255, 0.3), transparent); animation: holoScan 4s linear infinite; }
+    @keyframes holoScan { 0% { left: -100%; } 50% { left: 150%; } 100% { left: 150%; } }
+    .timeline { position: relative; max-width: 800px; margin: 0 auto; padding: 2rem 0; }
+    .timeline::after { content: ''; position: absolute; width: 3px; background-color: rgba(255, 255, 255, 0.2); top: 0; bottom: 0; left: 50%; margin-left: -1.5px; opacity: 100; transform: scaleY(0); transform-origin: top; }
+    .timeline-item { padding: 10px 40px; position: relative; background-color: inherit; width: 50%; opacity: 100; transform: translateX(-50px); }
+    .timeline-item.right { left: 50%; transform: translateX(50px); }
+    .timeline-item::after { content: ''; position: absolute; width: 15px; height: 15px; right: -8.5px; background-color: #4ecdc4; border: 3px solid #0a0a0a; top: 25px; border-radius: 50%; z-index: 1; transform: scale(0); }
+    .timeline-item.right::after { left: -8.5px; }
+    .timeline-content { padding: 1.5rem; background: rgba(30, 30, 30, 0.7); backdrop-filter: blur(8px); position: relative; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2); }
+    #preloader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #0a0a0a; display: flex; justify-content: center; align-items: center; z-index: 10000; opacity: 1; transition: opacity 0.5s ease-out; }
+    #preloader.hidden { opacity: 100; pointer-events: none; }
+    .loader-shape { width: 50px; height: 50px; border: 5px solid rgba(255, 255, 255, 0.2); border-top-color: #4ecdc4; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .recognition-card { opacity: 100; transform: translateY(30px); background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); backdrop-filter: blur(5px); /* Inherits .card styles too */ }
+
+  </style>
+</head>
+<body>
+  <div id="preloader"><div class="loader-shape"></div></div>
+  <div id="particles-js"></div>
+  <div id="cursor"></div>
+  <div id="root"></div>
+  <div id="fallback" style="display: none; text-align: center; padding: 2rem;">
+    <h1 style="font-size: 2.5rem; font-family: 'Poppins', sans-serif;">Portfolio Fallback</h1>
+    <p style="font-size: 1rem;">Unable to load React content. Please check the console (F12) for errors.</p>
+  </div>
+
+  <script type="text/babel">
+    console.log("Script loaded: Initializing React - Card Animations Update");
+
+    // --- Data (Keep Expanded Data from previous step) --- 
+    const projects = [
+        { title: "NebulaRender Engine", description: "Real-time PBR rendering engine...", tech: ["WebGL", "GLSL", "TypeScript", "React"], link: "#", challenge: "Optimizing shader performance...", result: "Achieved 60fps..."}, 
+        { title: "QuantumLeap E-Commerce", description: "Futuristic e-commerce platform...", tech: ["React", "Three.js", "Node.js", "MongoDB", "Tailwind CSS"], link: "#", challenge: "Seamless integration...", result: "Increased user engagement by 40%."}, 
+        { title: "ChronoViz Data Dashboard", description: "Interactive dashboard visualizing...", tech: ["React", "D3.js", "GSAP", "Python (API)"], link: "#", challenge: "Handling large datasets...", result: "Enabled faster data analysis..."}, 
+        { title: "Aether Agency Website", description: "Award-winning website...", tech: ["React", "GSAP", "SVG", "Figma"], link: "#", challenge: "Achieving complex animations...", result: "Featured on Awwwards..."}, 
+        { title: "Project Chimera WebAR", description: "Augmented reality experience...", tech: ["WebXR", "Three.js", "React", "Blender"], link: "#", challenge: "Markerless tracking stability...", result: "Successful prototype deployed..."}, 
+        { title: "Synthwave Surfers Game Portal", description: "Promotional landing page...", tech: ["React", "GSAP", "WebGL", "GLSL", "Tone.js"], link: "#", challenge: "Integrating audio reactivity...", result: "Generated significant pre-launch buzz."}, 
+        { title: "BioSphere Sim", description: "Interactive simulation of urban ecosystems...", tech: ["React", "Deck.gl", "Mapbox", "Node.js"], link: "#", challenge: "Visualizing complex ecological data...", result: "Used as an educational tool..."}, 
+        { title: "Generative Soundscapes", description: "Web-based tool creating ambient music...", tech: ["Web Audio API", "Tone.js", "React", "p5.js"], link: "#", challenge: "Real-time audio synthesis...", result: "Popular among ambient music enthusiasts."}, 
+        { title: "VR Museum Tour: Ancient Egypt", description: "Immersive virtual reality tour...", tech: ["Unity", "C#", "Blender", "Oculus SDK"], link: "#", challenge: "Optimizing high-poly models...", result: "Received positive feedback..."}, 
+        { title: "Kinetic Typography Engine", description: "A JavaScript library for creating...", tech: ["JavaScript", "GSAP", "Canvas API"], link: "#", challenge: "Creating a flexible API...", result: "Adopted by several digital agencies."}, 
+        { title: "AI Story Generator (Web)", description: "A web application using GPT-3.5 API...", tech: ["React", "Node.js", "Express", "OpenAI API"], link: "#", challenge: "Managing API costs...", result: "Fun side-project exploring AI."}, 
+        { title: "Interactive Physics Playground", description: "A 2D physics sandbox built with Matter.js...", tech: ["Matter.js", "HTML5 Canvas", "JavaScript"], link: "#", challenge: "Ensuring stable physics simulation.", result: "Used in online physics tutorials."}, 
+        { title: "HoloMeeting Concept", description: "Proof-of-concept for a holographic meeting...", tech: ["WebRTC", "Three.js", "Node.js", "Socket.IO"], link: "#", challenge: "Low-latency video streaming...", result: "Demonstrated potential for future tools."}, 
+        { title: "DataFlor: Generative Art Tool", description: "A tool that generates floral patterns...", tech: ["p5.js", "React", "D3.js"], link: "#", challenge: "Mapping diverse data types...", result: "Exhibited in a digital art gallery."}, 
+      ];
+    const certificates = [
+        { title: "MFA in Computer Animation", issuer: "CalArts", year: "2024", description: "Specialized in advanced 3D modeling..."}, 
+        { title: "Certified GSAP Expert", issuer: "GreenSock Academy", year: "2023", description: "Demonstrated mastery of GSAP..."}, 
+        { title: "Advanced WebGL & Shader Dev", issuer: "Khronos Group Training", year: "2023", description: "In-depth knowledge of WebGL..."}, 
+        { title: "Professional Scrum Master I", issuer: "Scrum.org", year: "2022", description: "Certified understanding of Agile..."}, 
+        { title: "UI/UX Design Specialization", issuer: "Coursera (CalArts)", year: "2021", description: "Completed coursework on user research..."}, 
+        { title: "AWS Certified Developer – Assoc.", issuer: "AWS", year: "2024", description: "Validated expertise in AWS development..."}, 
+        { title: "TensorFlow Developer Cert.", issuer: "Google", year: "2023", description: "Proficiency in building ML models..."}, 
+        { title: "Unity Certified Pro: Programmer", issuer: "Unity Technologies", year: "2022", description: "Demonstrated professional C# skills..."}, 
+        { title: "Houdini FX Fundamentals", issuer: "SideFX Certified School", year: "2022", description: "Core understanding of Houdini..."}, 
+        { title: "Design Thinking for Innovation", issuer: "IDEO U", year: "2021", description: "Mastered human-centered design..."}, 
+        { title: "GCP Professional Cloud Architect", issuer: "Google Cloud", year: "2024", description: "Expertise in designing GCP solutions..."}, 
+      ];
+    const skills = {
+          "Frontend": [
+            { name: "React", description: "Advanced hooks, state mgmt (Redux/Zustand), performance.", icon: "⚛️" },
+            { name: "JavaScript", description: "ESNext, async patterns, functional programming.", icon: "💡" },
+            { name: "TypeScript", description: "Large-scale apps, type safety, maintainability.", icon: "📘" },
+            { name: "HTML5", description: "Semantic markup, accessibility (WCAG), APIs.", icon: "🧱" },
+            { name: "CSS3/SASS", description: "Complex layouts, animations, custom props, preprocessors.", icon: "🎨" },
+            { name: "Tailwind CSS", description: "Rapid UI dev, utility-first, customization.", icon: "💨" },
+            { name: "Vue.js", description: "Vue 3, Composition API, interactive UIs.", icon: "🖖" },
+          ],
+          "Backend & DevOps": [
+            { name: "Node.js", description: "Scalable APIs (Express/Fastify), real-time apps.", icon: "🚀" },
+            { name: "Python", description: "Flask/Django APIs, scripting, data analysis.", icon: "🐍" },
+            { name: "Databases", description: "SQL (PostgreSQL), NoSQL (MongoDB, Firestore).", icon: "💾" },
+            { name: "Docker", description: "Containerization, consistent environments.", icon: "🐳" },
+            { name: "AWS/GCP", description: "Cloud deployment & management (EC2, S3, Lambda, Cloud Run).", icon: "☁️" },
+            { name: "CI/CD", description: "Automated testing & deployment (GitHub Actions).", icon: "⚙️" },
+          ],
+          "3D & Graphics": [
+            { name: "Three.js", description: "Complex 3D scenes, custom geometries, shaders.", icon: "🧊" },
+            { name: "WebGL", description: "Low-level GPU programming, custom rendering.", icon: "✨" },
+            { name: "GLSL", description: "Vertex & fragment shaders, advanced visual effects.", icon: "🌈" },
+            { name: "Blender", description: "Modeling, texturing, rigging, animation for web.", icon: "🍊" },
+            { name: "Unity", description: "Interactive 3D/VR experiences and games.", icon: "🎮" },
+            { name: "WebXR", description: "Immersive AR/VR applications for the web.", icon: "🕶️" },
+            { name: "Canvas API", description: "Custom 2D graphics, visualizations, animations.", icon: "🖌️" },
+          ],
+          "Animation & Interaction": [
+            { name: "GSAP", description: "Complex, performant animations & interactions.", icon: "🟩" },
+            { name: "Framer Motion", description: "Declarative animations & gestures in React.", icon: " MOTION" },
+            { name: "Web Audio API", description: "Interactive audio experiences & visualizations.", icon: "🔊" },
+            { name: "p5.js", description: "Creative coding, generative art, visual experiments.", icon: "🌸" },
+          ],
+          "Design & Tools": [
+            { name: "Figma", description: "UI/UX design, prototyping, developer handoff.", icon: "🖋️" },
+            { name: "Adobe CS", description: "Photoshop, Illustrator for asset creation.", icon: "🖼️" },
+            { name: "Git/GitHub", description: "Version control, collaborative workflows.", icon: "🐙" },
+            { name: "Agile/Scrum", description: "Iterative development cycles, collaboration.", icon: "🔄" },
+          ]
+      };
+    const experiences = [
+        { role: "Lead Creative Technologist", company: "Nebula Studios", period: "2023 - Present", description: "Spearheading development of cutting-edge interactive web projects...", achievements: ["Led team to win 'Site of the Month'", "Developed reusable 3D component library", "Implemented CI/CD pipeline..."]}, 
+        { role: "Senior UI/UX Engineer", company: "Quantum Interfaces Inc.", period: "2021 - 2023", description: "Designed and implemented highly interactive UIs for data viz apps...", achievements: ["Redesigned core dashboard, improving task completion rate by 25%", "Created internal UI component library", "Introduced automated accessibility testing"]}, 
+        { role: "Frontend Dev & 3D Artist", company: "PixelForge Co.", period: "2019 - 2021", description: "Developed responsive websites and e-commerce apps...", achievements: ["Developed 3D product viewer increasing conversion rates by 15%", "Contributed to open-source React components", "Optimized website load times by 40%"]}, 
+        { role: "Freelance Web Designer/Dev", company: "Self-Employed", period: "2018 - 2019", description: "Worked directly with small businesses on website design...", achievements: ["Successfully delivered over 15 client projects", "Built diverse portfolio", "Managed all client communication"]}, 
+        { role: "Creative Coding Researcher", company: "Chrono Labs", period: "2017 - 2018", description: "Explored novel techniques for generative art and data viz...", achievements: ["Co-authored paper in SIGGRAPH proceedings", "Developed prototype for interactive museum exhibit", "Presented research at conference"]}, 
+        { role: "Technical Artist Intern", company: "Luminous Games", period: "Summer 2017", description: "Assisted art and engineering teams with shaders, assets, tools...", achievements: ["Developed custom shader for environment effects", "Automated asset import process", "Contributed to scene performance optimization"]}, 
+        { role: "Web Development Tutor", company: "University Coding Center", period: "2016 - 2017", description: "Provided tutoring in HTML, CSS, JS, PHP/MySQL...", achievements: ["Helped dozens of students improve coding skills", "Developed supplementary learning materials", "Received positive feedback"]}, 
+      ];
+    const recognitions = [
+        { title: "Awwwards - Site of the Day", project: "Aether Agency Website", year: "2024" },
+        { title: "CSS Design Awards - WOTD", project: "Synthwave Surfers Portal", year: "2023" },
+        { title: "WebXR Challenge - Grand Prize", project: "Project Chimera WebAR", year: "2023" },
+        { title: "Digital Canvas Award - Best WebGL", project: "NebulaRender Showcase", year: "2024" },
+      ];
+    const contactMethods = [
+        { type: "Email", value: "hello@creative-dev.io", link: "mailto:hello@creative-dev.io", icon: "✉️" },
+        { type: "LinkedIn", value: "/in/your-profile-slug", link: "https://linkedin.com/in/your-profile-slug", icon: "💼" },
+        { type: "GitHub", value: "/your-github-username", link: "https://github.com/your-github-username", icon: "🐙" },
+        { type: "Behance", value: "/your-behance", link: "#", icon: "🎨" },
+        { type: "Dribbble", value: "/your-dribbble", link: "#", icon: "🏀" },
+        { type: "Twitter/X", value: "@yourhandle", link: "#", icon: "🐦" },
+    ];
+    // --- END Data --- 
+
+    function App() {
+      React.useEffect(() => {
+        console.log("useEffect: Setting up animations, cursor, particles, tilt");
+        gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
+        document.getElementById("fallback").style.display = "none";
+
+        // Preloader
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+            setTimeout(() => {
+                 gsap.to(preloader, { opacity: 0, duration: 0.5, onComplete: () => preloader.style.display = 'none' });
+                 // Hero Animation
+                 gsap.from(".hero-title .letter", { opacity: 0, y: 50, rotationX: -90, duration: 0.8, stagger: 0.05, ease: "power3.out", delay: 0.3 });
+                 gsap.from(".hero-text", { opacity: 0, y: 30, duration: 0.8, stagger: 0.2, ease: "power3.out", delay: 0.6 });
+            }, 500);
+        } else { console.error("Preloader element not found"); }
+
+        // Particles.js
+        if (window.particlesJS) {
+          particlesJS('particles-js', { /* ... particles config ... */ 
+            "particles":{"number":{"value":100,"density":{"enable":true,"value_area":900}},"color":{"value":"#ffffff"},"shape":{"type":"circle"},"opacity":{"value":0.3,"random":true,"anim":{"enable":true,"speed":0.5,"opacity_min":0.1,"sync":false}},"size":{"value":3,"random":true},"line_linked":{"enable":true,"distance":150,"color":"#ffffff","opacity":0.2,"width":1},"move":{"enable":true,"speed":1,"direction":"none","random":true,"straight":false,"out_mode":"out","bounce":false}},
+            "interactivity":{"detect_on":"canvas","events":{"onhover":{"enable":true,"mode":"grab"},"onclick":{"enable":true,"mode":"push"},"resize":true},"modes":{"grab":{"distance":140,"line_linked":{"opacity":0.5}},"push":{"particles_nb":4}}},
+            "retina_detect":true
+          });
+        } else { console.error("particles.js not loaded"); }
+
+        // Split titles
+        const titles = [".hero-title", ".projects-title", ".certs-title", ".skills-title", ".exp-title", ".recognitions-title", ".contact-title"];
+        titles.forEach((selector) => {
+          const title = document.querySelector(selector);
+          if (title) { title.innerHTML = title.textContent.replace(/\S/g, "<span class='letter'>$&</span>"); }
+        });
+
+        // --- UPDATED GSAP ANIMATIONS --- 
+
+        // Section Title Reveals
+        gsap.utils.toArray([".projects-title", ".certs-title", ".skills-title", ".exp-title", ".recognitions-title", ".contact-title"]).forEach(title => {
+            gsap.from(title.querySelectorAll('.letter'), { scrollTrigger: { trigger: title, start: "top 90%", toggleActions: "play none none reset" }, opacity: 0, y: 30, filter: 'blur(5px)', duration: 0.6, stagger: 0.04, ease: "power2.out" });
+        });
+
+        // Project Cards Reveal (Keep existing, tilt added separately)
+        gsap.from(".project-card", { scrollTrigger: { trigger: ".projects-section", start: "top 80%", toggleActions: "play none none reset" }, opacity: 0, scale: 0.9, y: 50, duration: 0.8, stagger: 0.1, ease: "power3.out" });
+
+        // Initialize Vanilla Tilt for Project Cards
+        if (window.VanillaTilt) {
+            VanillaTilt.init(document.querySelectorAll(".project-card"), {
+                max: 15,      // Max tilt rotation (degrees)
+                speed: 400,   // Speed of the enter/exit transition
+                glare: true,  // Add a glare effect
+                "max-glare": 0.3 // Glare intensity
+            });
+            console.log("Vanilla Tilt initialized for project cards.");
+        } else { console.error("Vanilla Tilt not loaded"); }
+
+        // Certificates Holographic Reveal
+        gsap.from(".cert-card", { scrollTrigger: { trigger: ".certs-section", start: "top 80%", toggleActions: "play none none reset" }, opacity: 0, y: 60, rotationX: -30, duration: 0.8, stagger: 0.15, ease: "power3.out", onStart: (self) => self.elements.forEach((el) => el.classList.add("holo-effect")) });
+
+        // Skill Cards Reveal (Target individual cards)
+        gsap.from(".skill-card", { scrollTrigger: { trigger: ".skills-section", start: "top 85%", toggleActions: "play none none reset" }, opacity: 0, scale: 0.8, y: 30, duration: 0.5, stagger: 0.08, ease: "back.out(1.7)" });
+
+        // Experience Timeline Animation (Keep existing)
+        const timeline = document.querySelector('.timeline');
+        if (timeline) {
+            gsap.to(timeline.querySelector('::after'), { scrollTrigger: { trigger: timeline, start: "top 70%", end: "bottom 80%", scrub: 1 }, opacity: 1, scaleY: 1, ease: "none" });
+            gsap.utils.toArray('.timeline-item').forEach(item => {
+                const isRight = item.classList.contains('right');
+                gsap.from(item, { scrollTrigger: { trigger: item, start: "top 85%", toggleActions: "play none none reset" }, opacity: 0, x: isRight ? 50 : -50, duration: 0.8, ease: "power3.out" });
+                gsap.from(item.querySelector('::after'), { scrollTrigger: { trigger: item, start: "top 85%", toggleActions: "play none none reset" }, scale: 0, duration: 0.5, ease: "back.out(1.7)", delay: 0.3 });
+            });
+        }
+
+        // Recognitions Card Reveal (Keep existing)
+        gsap.from(".recognition-card", { scrollTrigger: { trigger: ".recognitions-section", start: "top 80%", toggleActions: "play none none reset" }, opacity: 0, y: 30, duration: 0.8, stagger: 0.15, ease: "power3.out" });
+
+        // Contact Cards Reveal (Target individual cards)
+        gsap.from(".contact-card", { scrollTrigger: { trigger: ".contact-section", start: "top 85%", toggleActions: "play none none reset" }, opacity: 0, y: 30, duration: 0.6, stagger: 0.1, ease: "power3.out" });
+
+        // Background Color Transitions (Keep existing)
+        const sections = gsap.utils.toArray('.section');
+        const colors = ["#0a0a0a", "#1a2634", "#2d1b4e", "#1a4e3b", "#4e1a3b", "#4d4d33", "#3b1a4e"];
+        sections.forEach((section, i) => {
+            if (i > 0) { gsap.to("body", { scrollTrigger: { trigger: section, start: "top 60%", end: "top 40%", scrub: 1.5 }, backgroundColor: colors[i], ease: "none" }); }
+        });
+
+        // Custom Cursor Logic (Keep existing)
+        const cursor = document.getElementById("cursor");
+        let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0;
+        const speed = 0.1;
+        document.addEventListener("mousemove", (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+        function animateCursor() { cursorX += (mouseX - cursorX) * speed; cursorY += (mouseY - cursorY) * speed; cursor.style.left = `${cursorX}px`; cursor.style.top = `${cursorY}px`; requestAnimationFrame(animateCursor); }
+        animateCursor();
+        document.querySelectorAll("a, button, .project-card, .cert-card, .skill-card, .timeline-item, .recognition-card, .contact-card").forEach((el) => { // Added skill/contact cards
+          el.addEventListener("mouseenter", () => cursor.classList.add("hovered"));
+          el.addEventListener("mouseleave", () => cursor.classList.remove("hovered"));
+        });
+        document.querySelectorAll("h1, h2, h3, p, span, li").forEach((el) => {
+          el.addEventListener("mouseenter", () => cursor.classList.add("text-hover"));
+          el.addEventListener("mouseleave", () => cursor.classList.remove("text-hover"));
+        });
+
+      }, []);
+
+      return (
+        <div>
+          {/* Hero Section */}
+          <div className="section hero-section flex flex-col justify-center items-center text-center">
+            <h1 className="hero-title text-5xl sm:text-6xl md:text-7xl font-bold mb-4">Creative Technologist</h1>
+            <p className="hero-text text-lg sm:text-xl text-gray-300 max-w-3xl mb-2">Blending art, design, and code to craft immersive and engaging digital experiences.</p>
+            <p className="hero-text text-base sm:text-lg text-gray-400 max-w-2xl mb-6">Specializing in interactive web applications, real-time 3D graphics (WebGL/Three.js), advanced animations (GSAP), and experimental interfaces.</p>
+          </div>
+
+          {/* Projects Section */}
+          <div className="section projects-section">
+            <h2 className="projects-title text-4xl sm:text-5xl font-bold mb-12 text-center">Featured Projects</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {projects.map((project, index) => (
+                <div key={index} className="card project-card" data-tilt> {/* Added data-tilt for Vanilla Tilt */}
+                  <div>
+                    <h3 className="text-xl sm:text-2xl font-semibold mb-2 text-cyan-400">{project.title}</h3>
+                    <p className="text-sm sm:text-base text-gray-300 mb-3">{project.description}</p>
+                    <p className="text-xs text-gray-400 mb-1 italic">Challenge: {project.challenge}</p>
+                    <p className="text-xs text-gray-400 mb-3 italic">Result: {project.result}</p>
+                    <p className="text-sm text-gray-400 mb-4">Tech: <span className="font-medium text-gray-300">{project.tech.join(", ")}</span></p>
+                  </div>
+                  <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:text-teal-300 mt-4 inline-block font-semibold self-center transition-colors duration-300">Learn More (Placeholder)</a>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Certificates Section */}
+          <div className="section certs-section">
+            <h2 className="certs-title text-4xl sm:text-5xl font-bold mb-12 text-center">Certifications & Education</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {certificates.map((cert, index) => (
+                <div key={index} className="card cert-card">
+                  <h3 className="text-xl sm:text-2xl font-semibold mb-2 text-purple-400">{cert.title}</h3>
+                  <p className="text-sm font-medium text-gray-300 mb-3">{cert.issuer} ({cert.year})</p>
+                  <p className="text-sm sm:text-base text-gray-400">{cert.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Skills Section - UPDATED STRUCTURE */} 
+          <div className="section skills-section">
+            <h2 className="skills-title text-4xl sm:text-5xl font-bold mb-12 text-center">Technical Skills</h2>
+            <div className="max-w-6xl mx-auto w-full"> {/* Wider max-width */} 
+              {Object.entries(skills).map(([category, skillList]) => (
+                <div key={category} className="skill-category">
+                  <h3 className="skill-category-title">{category}</h3>
+                  <div className="skills-grid"> {/* Use the new grid class */} 
+                    {skillList.map((skill, index) => (
+                      <div key={`${category}-${index}`} className="skill-card"> {/* Individual skill card */} 
+                        <div className="skill-card-icon">{skill.icon || '💡'}</div> {/* Use icon from data */} 
+                        <div className="skill-card-name">{skill.name}</div>
+                        <p className="skill-card-description">{skill.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Experience Section (Timeline) */}
+          <div className="section exp-section">
+            <h2 className="exp-title text-4xl sm:text-5xl font-bold mb-12 text-center">Professional Journey</h2>
+            <div className="timeline">
+                {experiences.map((exp, index) => (
+                    <div key={index} className={`timeline-item ${index % 2 === 0 ? 'left' : 'right'}`}>
+                        <div className="timeline-content">
+                            <h3 className="text-lg sm:text-xl font-semibold mb-1 text-red-400">{exp.role}</h3>
+                            <p className="text-sm font-medium text-gray-300 mb-2">{exp.company} | {exp.period}</p>
+                            <p className="text-sm text-gray-400 mb-3">{exp.description}</p>
+                            {exp.achievements && (
+                                <ul className="list-disc list-inside text-xs text-gray-400 text-left">
+                                    {exp.achievements.map((ach, i) => <li key={i}>{ach}</li>)}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+          </div>
+
+          {/* Recognitions Section */}
+          <div className="section recognitions-section">
+            <h2 className="recognitions-title text-4xl sm:text-5xl font-bold mb-12 text-center">Recognitions</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {recognitions.map((rec, index) => (
+                <div key={index} className="card recognition-card">
+                  <h3 className="text-xl sm:text-2xl font-semibold mb-2 text-yellow-400">{rec.title}</h3>
+                  <p className="text-sm font-medium text-gray-300 mb-1">{rec.project}</p>
+                  <p className="text-sm text-gray-400">({rec.year})</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Contact Section - UPDATED STRUCTURE */} 
+          <div className="section contact-section">
+            <h2 className="contact-title text-4xl sm:text-5xl font-bold mb-8 text-center">Let's Connect</h2>
+            <p className="text-lg sm:text-xl mb-6 text-gray-200">Interested in collaborating or discussing an idea? Reach out!</p>
+            <div className="contact-grid"> {/* Use the new grid class */} 
+              {contactMethods.map((method, index) => (
+                <a key={index} href={method.link} target="_blank" rel="noopener noreferrer" className="contact-card">
+                  <span className="contact-card-icon">{method.icon || '🔗'}</span> {/* Use icon from data */} 
+                  <span className="contact-card-text">{method.type}: {method.value}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Render App
+    try {
+      console.log("Attempting to render React app using ReactDOM.render");
+      const container = document.getElementById("root");
+      if (container) {
+          ReactDOM.render(<App />, container);
+          console.log("React app rendered successfully using ReactDOM.render");
+      } else {
+          console.error("Root element not found");
+          document.getElementById("fallback").style.display = "block";
+      }
+    } catch (e) {
+      console.error("React rendering failed:", e);
+      document.getElementById("fallback").style.display = "block";
+    }
+  </script>
+</body>
+</html>
+
